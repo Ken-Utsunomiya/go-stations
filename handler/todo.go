@@ -49,6 +49,33 @@ func (h *TODOHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			fmt.Println("Error")
 			return
 		}
+	case "PUT":
+		var req model.UpdateTODORequest
+		err := json.NewDecoder(r.Body).Decode(&req)
+		if err != nil {
+			fmt.Println("Error")
+			return
+		}
+		if req.ID == 0 || req.Subject == "" {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		ctx := r.Context()
+		res, err := h.Update(ctx, &req)
+		if err != nil {
+			if err.Error() == "Not Found" {
+				w.WriteHeader(http.StatusNotFound)
+			}
+			fmt.Println("Error")
+			return
+		}
+
+		err = json.NewEncoder(w).Encode(&res)
+		if err != nil {
+			fmt.Println("Error")
+			return
+		}
 	}
 }
 
@@ -67,8 +94,12 @@ func (h *TODOHandler) Read(ctx context.Context, req *model.ReadTODORequest) (*mo
 
 // Update handles the endpoint that updates the TODO.
 func (h *TODOHandler) Update(ctx context.Context, req *model.UpdateTODORequest) (*model.UpdateTODOResponse, error) {
-	_, _ = h.svc.UpdateTODO(ctx, 0, "", "")
-	return &model.UpdateTODOResponse{}, nil
+	todo, err := h.svc.UpdateTODO(ctx, req.ID, req.Subject, req.Description)
+	if err != nil {
+		return nil, err
+	}
+	res := &model.UpdateTODOResponse{TODO: *todo}
+	return res, nil
 }
 
 // Delete handles the endpoint that deletes the TODOs.
