@@ -38,7 +38,7 @@ func (s *TODOService) CreateTODO(ctx context.Context, subject, description strin
 	}
 
 	id, err := res.LastInsertId()
-	if err != nil || id == 0 {
+	if err != nil {
 		return nil, err
 	}
 
@@ -47,7 +47,7 @@ func (s *TODOService) CreateTODO(ctx context.Context, subject, description strin
 	if err != nil {
 		return nil, err
 	}
-
+	todo.ID = id
 	return &todo, nil
 }
 
