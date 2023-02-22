@@ -3,5 +3,5 @@ package model
 type ErrNotFound struct{}
 
 func (e *ErrNotFound) Error() string {
-	return "Not Found"
+	return "Error: Not Found"
 }
