@@ -46,20 +46,20 @@ func (h *TODOHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			fmt.Println("Error")
 			return
 		}
-	case "POST":
-		var ctr model.CreateTODORequest
-		err := json.NewDecoder(r.Body).Decode(&ctr)
+	case http.MethodPost:
+		var req model.CreateTODORequest
+		err := json.NewDecoder(r.Body).Decode(&req)
 		if err != nil {
 			fmt.Println("Error")
 			return
 		}
-		if ctr.Subject == "" {
+		if req.Subject == "" {
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
 
 		ctx := r.Context()
-		res, err := h.Create(ctx, &ctr)
+		res, err := h.Create(ctx, &req)
 		if err != nil {
 			fmt.Println("Error")
 			return
@@ -70,7 +70,7 @@ func (h *TODOHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			fmt.Println("Error")
 			return
 		}
-	case "PUT":
+	case http.MethodPut:
 		var req model.UpdateTODORequest
 		err := json.NewDecoder(r.Body).Decode(&req)
 		if err != nil {

@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"database/sql"
-	"fmt"
 
 	"github.com/TechBowl-japan/go-stations/model"
 )
@@ -43,12 +42,11 @@ func (s *TODOService) CreateTODO(ctx context.Context, subject, description strin
 		return nil, err
 	}
 
-	var todo model.TODO
+	todo := model.TODO{ID: id}
 	err = s.db.QueryRowContext(ctx, confirm, id).Scan(&todo.Subject, &todo.Description, &todo.CreatedAt, &todo.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}
-	todo.ID = id
 	return &todo, nil
 }
 
@@ -78,10 +76,8 @@ func (s *TODOService) ReadTODO(ctx context.Context, prevID, size int64) ([]*mode
 		if err != nil {
 			return nil, err
 		}
-		fmt.Println(todo)
 		todos = append(todos, &todo)
 	}
-	fmt.Println(todos)
 	return todos, nil
 }
 
@@ -103,20 +99,19 @@ func (s *TODOService) UpdateTODO(ctx context.Context, id int64, subject, descrip
 		return nil, err
 	}
 
-	cnt, err := res.RowsAffected()
+	rowsCnt, err := res.RowsAffected()
 	if err != nil {
 		return nil, err
 	}
-	if cnt == 0 {
+	if rowsCnt == 0 {
 		return nil, &model.ErrNotFound{}
 	}
 
-	var todo model.TODO
+	todo := model.TODO{ID: id}
 	err = s.db.QueryRowContext(ctx, confirm, id).Scan(&todo.Subject, &todo.Description, &todo.CreatedAt, &todo.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}
-	todo.ID = id
 	return &todo, nil
 }
 
