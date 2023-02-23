@@ -3,7 +3,6 @@ package handler
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -37,20 +36,20 @@ func (h *TODOHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		res, err := h.Read(ctx, &req)
 		if err != nil {
-			fmt.Println("Error")
+			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 
 		err = json.NewEncoder(w).Encode(&res)
 		if err != nil {
-			fmt.Println("Error")
+			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 	case http.MethodPost:
 		var req model.CreateTODORequest
 		err := json.NewDecoder(r.Body).Decode(&req)
 		if err != nil {
-			fmt.Println("Error")
+			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 		if req.Subject == "" {
@@ -61,20 +60,20 @@ func (h *TODOHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		res, err := h.Create(ctx, &req)
 		if err != nil {
-			fmt.Println("Error")
+			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 
 		err = json.NewEncoder(w).Encode(&res)
 		if err != nil {
-			fmt.Println("Error")
+			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 	case http.MethodPut:
 		var req model.UpdateTODORequest
 		err := json.NewDecoder(r.Body).Decode(&req)
 		if err != nil {
-			fmt.Println("Error")
+			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 		if req.ID == 0 || req.Subject == "" {
@@ -85,23 +84,24 @@ func (h *TODOHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		res, err := h.Update(ctx, &req)
 		if err != nil {
-			if err.Error() == "Not Found" {
+			switch err.(type) {
+			case *model.ErrNotFound:
 				w.WriteHeader(http.StatusNotFound)
+			default:
+				w.WriteHeader(http.StatusInternalServerError)
 			}
-			fmt.Println("Error")
-			return
 		}
 
 		err = json.NewEncoder(w).Encode(&res)
 		if err != nil {
-			fmt.Println("Error")
+			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 	case http.MethodDelete:
 		var req model.DeleteTODORequest
 		err := json.NewDecoder(r.Body).Decode(&req)
 		if err != nil {
-			fmt.Println("Error")
+			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 		if len(req.IDs) == 0 {
@@ -112,15 +112,18 @@ func (h *TODOHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		res, err := h.Delete(ctx, &req)
 		if err != nil {
-			if err.Error() == "Not Found" {
+			switch err.(type) {
+			case *model.ErrNotFound:
 				w.WriteHeader(http.StatusNotFound)
+			default:
+				w.WriteHeader(http.StatusInternalServerError)
 			}
 			return
 		}
 
 		err = json.NewEncoder(w).Encode(&res)
 		if err != nil {
-			fmt.Println("Error")
+			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 	}
@@ -129,8 +132,11 @@ func (h *TODOHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 // Create handles the endpoint that creates the TODO.
 func (h *TODOHandler) Create(ctx context.Context, req *model.CreateTODORequest) (*model.CreateTODOResponse, error) {
 	todo, err := h.svc.CreateTODO(ctx, req.Subject, req.Description)
-	res := &model.CreateTODOResponse{TODO: *todo}
-	return res, err
+	if err != nil {
+		return nil, err
+	}
+
+	return &model.CreateTODOResponse{TODO: *todo}, err
 }
 
 // Read handles the endpoint that reads the TODOs.
@@ -145,8 +151,8 @@ func (h *TODOHandler) Read(ctx context.Context, req *model.ReadTODORequest) (*mo
 	if err != nil {
 		return nil, err
 	}
-	res := &model.ReadTODOResponse{TODOs: todos}
-	return res, nil
+
+	return &model.ReadTODOResponse{TODOs: todos}, nil
 }
 
 // Update handles the endpoint that updates the TODO.
@@ -155,8 +161,8 @@ func (h *TODOHandler) Update(ctx context.Context, req *model.UpdateTODORequest) 
 	if err != nil {
 		return nil, err
 	}
-	res := &model.UpdateTODOResponse{TODO: *todo}
-	return res, nil
+
+	return &model.UpdateTODOResponse{TODO: *todo}, nil
 }
 
 // Delete handles the endpoint that deletes the TODOs.
